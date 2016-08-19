@@ -390,6 +390,11 @@ static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
 
 	obs_source_t *source = obs_load_source(data);
 	if (source) {
+		obs_source_t *prev = obs_get_output_source(channel);
+		if (prev) {
+			obs_source_remove(prev);
+			obs_source_release(prev);
+		}
 		obs_set_output_source(channel, source);
 		obs_source_release(source);
 	}
@@ -2518,6 +2523,8 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 		const char *curId = obs_data_get_string(settings, "device_id");
 
 		same = (strcmp(curId, deviceId) == 0);
+		if (!same)
+			obs_source_remove(source);
 
 		obs_data_release(settings);
 		obs_source_release(source);
@@ -2568,6 +2575,17 @@ void OBSBasic::CloseDialogs()
 	}
 }
 
+static inline void ClearChannel(int channel)
+{
+	obs_source_t *source = obs_get_output_source(channel);
+	if (source) {
+		obs_source_remove(source);
+		obs_source_release(source);
+	}
+
+	obs_set_output_source(channel, nullptr);
+}
+
 void OBSBasic::ClearSceneData()
 {
 	disableSaving++;
@@ -2580,12 +2598,12 @@ void OBSBasic::ClearSceneData()
 	ClearQuickTransitions();
 	ui->transitions->clear();
 
-	obs_set_output_source(0, nullptr);
-	obs_set_output_source(1, nullptr);
-	obs_set_output_source(2, nullptr);
-	obs_set_output_source(3, nullptr);
-	obs_set_output_source(4, nullptr);
-	obs_set_output_source(5, nullptr);
+	ClearChannel(0);
+	ClearChannel(1);
+	ClearChannel(2);
+	ClearChannel(3);
+	ClearChannel(4);
+	ClearChannel(5);
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
